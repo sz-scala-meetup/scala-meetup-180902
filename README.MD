@@ -9,7 +9,7 @@
 2、一种简单可靠的基于Akka的分布式缓存系统设计和实现
       - @凤凰木
 
-3. 泛型派生技术内幕 - Circe实践： 
+3、泛型派生技术内幕 - Circe实践： 
     insight "Generic derivation" by Travis Brown
       - @水山清风
       
