@@ -6,7 +6,7 @@ import data._
 import implicits._
 import monix.eval._
 
-trait Liftable[PolyType,S] {
+trait Liftable[PolyType,-S] {
   type Target
   def lift(source: S): Target
 }
@@ -33,23 +33,15 @@ trait Implicit1 extends Implicit2 {
     override def lift(source: Option[A]): DBOResult.DBOResult[A] = OptionT(source.pure[DBOResult.DBOError])
   }
 
-  implicit def implicit3[A]: Liftable.Aux[MyPoly,Left[String,A],DBOResult.DBOResult[A]] = new Liftable[MyPoly,Left[String,A]] {
+  implicit def implicit3[A]: Liftable.Aux[MyPoly,Either[String,A],DBOResult.DBOResult[A]] = new Liftable[MyPoly,Either[String,A]] {
     override type Target = DBOResult.DBOResult[A]
-    override def lift(source: Left[String,A]): DBOResult.DBOResult[A] = {
+    override def lift(source: Either[String,A]): DBOResult.DBOResult[A] = {
       val error: DBOResult.DBOError[A] = EitherT.fromEither(source)
       OptionT.liftF(error)
     }
   }
 
-  implicit def implicit4[A]: Liftable.Aux[MyPoly,Right[String,A],DBOResult.DBOResult[A]] = new Liftable[MyPoly,Right[String,A]] {
-    override type Target = DBOResult.DBOResult[A]
-    override def lift(source: Right[String,A]): DBOResult.DBOResult[A] = {
-      val error: DBOResult.DBOError[A] = EitherT.fromEither(source)
-      OptionT.liftF(error)
-    }
-  }
-
-  implicit def implicit5[A]: Liftable.Aux[MyPoly,Task[A],DBOResult.DBOResult[A]] = new Liftable[MyPoly,Task[A]] {
+  implicit def implicit4[A]: Liftable.Aux[MyPoly,Task[A],DBOResult.DBOResult[A]] = new Liftable[MyPoly,Task[A]] {
     override type Target = DBOResult.DBOResult[A]
     override def lift(source: Task[A]): DBOResult.DBOResult[A] = {
       val error: DBOResult.DBOError[A] = EitherT.liftF(source)
@@ -61,7 +53,7 @@ trait Implicit1 extends Implicit2 {
 
 trait Implicit2 {
 
-  implicit def implicit6[A]: Liftable.Aux[MyPoly,A,DBOResult.DBOResult[A]] = new Liftable[MyPoly,A] {
+  implicit def implicit5[A]: Liftable.Aux[MyPoly,A,DBOResult.DBOResult[A]] = new Liftable[MyPoly,A] {
     override type Target = DBOResult.DBOResult[A]
     override def lift(source: A): DBOResult.DBOResult[A] = Applicative[DBOResult.DBOResult].pure(source)
   }
@@ -77,7 +69,7 @@ object DBOResult  {
   }
 }
 
-object lesson6 extends App {
+object lesson7 extends App {
 import DBOResult._
 
   trait DBTable[K,V] {
@@ -89,8 +81,8 @@ import DBOResult._
 
     def delete(k: K): DBOResult[Unit]
   }
-  
-  def liftData[A,B](source: A)(implicit liftable: Liftable.Aux[MyPoly,A,B]):B = liftData(source)
+
+  def liftData[A,B](source: A)(implicit liftable: Liftable.Aux[MyPoly,A,B]):B = liftable.lift(source)
 
   class KVStore[K, V] extends DBTable[K,V] {
     private val kvs = new ConcurrentHashMap[K, V]()

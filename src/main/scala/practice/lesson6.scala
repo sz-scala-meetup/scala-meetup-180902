@@ -6,7 +6,7 @@ import data._
 import implicits._
 import monix.eval._
 
-trait Liftable[S] {
+trait Liftable[-S] {
   type Target
   def lift(source: S): Target
 }
@@ -31,23 +31,15 @@ trait Implicit1 extends Implicit2 {
     override def lift(source: Option[A]): DBOResult.DBOResult[A] = OptionT(source.pure[DBOResult.DBOError])
   }
 
-  implicit def implicit3[A]: Aux[Left[String,A],DBOResult.DBOResult[A]] = new Liftable[Left[String,A]] {
+  implicit def implicit3[A]: Aux[Either[String,A],DBOResult.DBOResult[A]] = new Liftable[Either[String,A]] {
     override type Target = DBOResult.DBOResult[A]
-    override def lift(source: Left[String,A]): DBOResult.DBOResult[A] = {
+    override def lift(source: Either[String,A]): DBOResult.DBOResult[A] = {
       val error: DBOResult.DBOError[A] = EitherT.fromEither(source)
       OptionT.liftF(error)
     }
   }
 
-  implicit def implicit4[A]: Aux[Right[String,A],DBOResult.DBOResult[A]] = new Liftable[Right[String,A]] {
-    override type Target = DBOResult.DBOResult[A]
-    override def lift(source: Right[String,A]): DBOResult.DBOResult[A] = {
-      val error: DBOResult.DBOError[A] = EitherT.fromEither(source)
-      OptionT.liftF(error)
-    }
-  }
-
-  implicit def implicit5[A]: Aux[Task[A],DBOResult.DBOResult[A]] = new Liftable[Task[A]] {
+  implicit def implicit4[A]: Aux[Task[A],DBOResult.DBOResult[A]] = new Liftable[Task[A]] {
     override type Target = DBOResult.DBOResult[A]
     override def lift(source: Task[A]): DBOResult.DBOResult[A] = {
       val error: DBOResult.DBOError[A] = EitherT.liftF(source)
@@ -61,7 +53,7 @@ trait Implicit2 {
 
   type Aux[S,T] = Liftable[S] { type Target = T }
 
-  implicit def implicit6[A]: Aux[A,DBOResult.DBOResult[A]] = new Liftable[A] {
+  implicit def implicit5[A]: Aux[A,DBOResult.DBOResult[A]] = new Liftable[A] {
     override type Target = DBOResult.DBOResult[A]
     override def lift(source: A): DBOResult.DBOResult[A] = Applicative[DBOResult.DBOResult].pure(source)
   }
